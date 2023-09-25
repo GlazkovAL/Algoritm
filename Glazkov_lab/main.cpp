@@ -5,6 +5,24 @@
 
 
 using namespace std;
+template <typename T>
+
+T corretctInput( T max ,string er_out)
+{
+	T x;
+	cin >> x;
+
+	while (cin.fail())
+	{
+		cin.clear();
+		cin.ignore(10000, '\n');
+		cout << er_out << endl;
+		cin >> x;
+	}
+	return x;
+
+}
+
 
 // структура для Трубы
 struct Pipe
@@ -49,22 +67,16 @@ Pipe createPipe(int p_id)
 	double p_lenght;
 	int p_diam;
 	bool p_repair;
+	string er_output;
 
 	cout << "Enter pipe name: ";
 	cin >> p_name;
 	cout << "Enter pipe lenght in meters: ";
-	cin >> p_lenght;
-	while (cin.fail())
-	{
-		cin.clear();
-		cin.ignore(10000, '\n');
-		cout << "Lenght muxt be double";
-		cin >> p_lenght;
-	}
+	p_lenght = corretctInput(1.,"Lenght must be double");
 	cout << "Enter pipe diametr in milimeters: ";
-	cin >> p_diam;
+	p_diam = corretctInput(1, "Diametr must be integer");
 	cout << "Enter 1 if pipe is on repairing or 0 if pipe is working: ";
-	cin >> p_repair;
+	p_repair = corretctInput(1, "Repairing status must be integer");
 
 
 	return { p_id, p_name, p_lenght, p_diam, p_repair };
@@ -81,27 +93,27 @@ CompStation createCS(int cs_id)
 	cout << "Enter comressor station name: ";
 	cin >> cs_name;
 	cout << "Enter number of workshops: ";
-	cin >> cs_workshops;
+	cs_workshops = corretctInput(1, "Workshops quantity must be integer");
 	cout << "Enter number of  working workshops: ";
-	cin >> cs_working_workshops;
+	cs_working_workshops = corretctInput(1, "Working workshops quantity must be integer");
 	while (cs_working_workshops > cs_workshops) 
 	{
 		if (cs_working_workshops > cs_workshops)
 		{
 			cout << "nubmer of working worshops must be less then number of workshops" << endl;
 			cout << "Enter number of  working workshops: ";
-			cin >> cs_working_workshops;
+			cs_working_workshops = corretctInput(1, "Working workshops quantity must be integer");
 		};
 	};
 	cout << "Enter compressor station efficiency: ";
-	cin >> cs_efficiency;
+	cs_efficiency = corretctInput(1., "Efficiency must be double");
 
 
 	return { cs_id ,cs_name, cs_workshops, cs_working_workshops, cs_efficiency };
 };
 
 // Функция для показа всех труб
-void show_pipes(vector <Pipe> all_p)
+void show_pipes( const vector <Pipe>& all_p)
 {
 	string work;
 	cout << "Pipes: " << endl;
@@ -109,7 +121,7 @@ void show_pipes(vector <Pipe> all_p)
 	for (const Pipe& pipe : all_p) {
 		if (pipe.repair) { work = "repairing" ; }
 		else { work = "working"; };
-		cout << pipe.id << " " << pipe.name << " " << pipe.lenght << " " << pipe.diam << " " << work << endl;
+		cout << pipe.id << " Name: " << pipe.name << " Lenght: " << pipe.lenght << " Diametr: " << pipe.diam << " Working status: " << work << endl;
 	}
 
 	
@@ -118,13 +130,13 @@ void show_pipes(vector <Pipe> all_p)
 };
 
 // Функция для показа всех компрессорных ствнций
-void show_cs( vector <CompStation> all_cs)
+void show_cs( const vector <CompStation>& all_cs)
 {
 
 	cout << "Compressor stations: " << endl;
 
 	for (const CompStation& cs : all_cs) {
-		cout << cs.id << " " << cs.name << " " << cs.workshops << " " << cs.working_workshops << " " << cs.efficiency << endl;
+		cout << cs.id << " Name: " << cs.name << " Workshops: " << cs.workshops << " Working workshops: " << cs.working_workshops << " Efficiency: " << cs.efficiency << endl;
 	}
 
 	cout << endl;
@@ -146,7 +158,7 @@ void edit_pipe(vector <Pipe>& all_pipes)
 		{
 			searched = true;
 			cout << "Enter 1 if pipe is on repairing or 0 if pipe is working: " ;
-			cin >> working_status;
+			working_status = corretctInput(1, "Repairing status must be integer");;
 			pipe.repair = working_status;
 			cout << "Pipe has been edited" << endl;
 			break;
@@ -159,8 +171,38 @@ void edit_pipe(vector <Pipe>& all_pipes)
 
 }
 
+//Функция редактирования КС
+void edit_cs(vector <CompStation>& all_cs)
+{
+	string name_edit;
+	int cs_working_workshops;
+	bool searched = false;
+
+	show_cs(all_cs);
+	cout << "Enter pipe name from the list above:";
+	cin >> name_edit;
+	for (CompStation& cs : all_cs) {
+		if (cs.name == name_edit)
+		{
+			cout << "Enter number of  working workshops: ";
+			cs_working_workshops = corretctInput(1, "Working workshops quantity must be integer");
+			while (cs_working_workshops > cs.workshops)
+			{
+				cout << "nubmer of working worshops must be less then number of workshops" << endl;
+				cout << "Enter number of  working workshops: ";
+				cs_working_workshops = corretctInput(1, "Working workshops quantity must be integer");
+			};
+		};
+	}
+	if (!searched)
+	{
+		cout << "Wrong compressor station name" << endl;
+	}
+
+}
+
 // Функция для сохранения объектов в файл
-void save_file(vector <Pipe> all_pipes, vector <CompStation> all_cs)
+void save_file( const vector <Pipe>& all_pipes, const vector <CompStation>& all_cs)
 {
 	ofstream out;
 	string f_name;
@@ -168,28 +210,95 @@ void save_file(vector <Pipe> all_pipes, vector <CompStation> all_cs)
 	cin >> f_name;
 	out.open("saves/"+ f_name + ".txt");
 	if (out.is_open()) {
+		//out << "PIPE" << endl;
+
 		for (const Pipe& pipe : all_pipes) {
 			out << pipe.id << endl << pipe.name << endl << pipe.lenght << endl << pipe.diam << endl << pipe.repair << endl;
 		}
-		out << "CStation";
-
+		
+		out << "999" << endl;
+		
 		for (const CompStation& cs : all_cs) {
 			out << cs.id << endl << cs.name << endl << cs.workshops << endl << cs.working_workshops << endl << cs.efficiency << endl;
 		}
-		out << "END";
+
+		out << "888";
+
 	}
 	out.close();
+
+	
 
 	cout << "File has been saved " << endl;
 };
 
-
-void LoadFile() 
+//Функция для импортирования данных из файла
+void LoadFile(vector <Pipe>& all_pipes, vector <CompStation>& all_cs)
 {
+	ifstream fin;
 	string path = "saves";
+	vector <filesystem::path> file_names;
+	bool searched = false;
+	string searshing_file;
+	int load_switch;
 
 	for (const auto& entry : filesystem::directory_iterator(path))
-		cout << entry.path().filename() << endl; 
+	{
+		file_names.push_back(entry.path().filename());
+		cout << entry.path().filename() << endl;
+	}
+
+	cout << "Enter file name: ";
+	cin >> searshing_file;
+
+	for (filesystem::path& fname : file_names) {
+		if (fname == searshing_file)
+		{
+			searched = true;
+
+			fin.open("saves/" + searshing_file);
+			if (fin.is_open()) {
+				cout << "start importing" << endl;
+				fin >> load_switch;
+				while (load_switch != 999) {
+
+					Pipe p;
+					p.id = load_switch;
+					fin >> p.name;
+					fin >> p.lenght;
+					fin >> p.diam;
+					fin >> p.repair;
+					fin >> load_switch;
+					all_pipes.push_back(p);
+				}
+
+				fin >> load_switch;
+
+				while (load_switch != 888) {
+
+					CompStation cs;
+					cs.id = load_switch;
+					fin >> cs.name;
+					fin >> cs.workshops;
+					fin >> cs.working_workshops;
+					fin >> cs.efficiency;
+					fin >> load_switch;
+					all_cs.push_back(cs);
+				}
+
+
+			}
+			else {
+				cout << "ERROR" << endl;
+			}
+			fin.close();
+			cout << "File has been imported"<< endl;
+		};
+	}
+	if (!searched)
+	{
+		cout << "Wrong file name" << endl;
+	}
 
 }
 
@@ -206,29 +315,18 @@ int main()
 	{
 		show_menu();
 		cout << "Enter command number: ";
-		cin >> zapros;
-		while (cin.fail())
-		{
-			cin.clear();
-			cin.ignore(10000, '\n');
-			cout << "Unexpected command, please choose command numbers from this list" << endl;
-			show_menu();
-			cin >> zapros;
-		} 
-
+		zapros = corretctInput(1, "Unexpected command, command number must be integer");
 	
 
 		switch (zapros)
 		{
 			case 1:
-				all_pipes.resize(pipe_id+1);
-				all_pipes[pipe_id]=createPipe(pipe_id);
+				all_pipes.push_back(createPipe(pipe_id));
 				cout << "Pipe was created" << endl << endl ;
 				pipe_id++;
 				break;
 			case 2:
-				all_stations.resize(cs_id + 1);
-				all_stations[cs_id] = createCS(cs_id);
+				all_stations.push_back(createCS(cs_id));
 				cout << "Compressor station was created" << endl << endl;
 				cs_id++;
 
@@ -240,19 +338,22 @@ int main()
 			case 4:
 				edit_pipe(all_pipes);
 				break;
+			case 5:
+				edit_cs(all_stations);
+				break;
 			case 6: 
 				save_file(all_pipes, all_stations);
 				break;
 
 			case 7:
 
+				LoadFile(all_pipes, all_stations);
 				break;
 
 			case 0:
 				return 0;
 			default:
 				cout << "Unexpected command, please choose command numbers from this list";
-				show_menu();
 				break;
 		}
 		
