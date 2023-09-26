@@ -160,7 +160,7 @@ void edit_pipe(vector <Pipe>& all_pipes)
 			cout << "Enter 1 if pipe is on repairing or 0 if pipe is working: " ;
 			working_status = corretctInput(1, "Repairing status must be integer");;
 			pipe.repair = working_status;
-			cout << "Pipe has been edited" << endl;
+			cout << "Pipe has been edited" << endl << endl;
 			break;
 		};
 	}
@@ -184,6 +184,7 @@ void edit_cs(vector <CompStation>& all_cs)
 	for (CompStation& cs : all_cs) {
 		if (cs.name == name_edit)
 		{
+			searched = true;
 			cout << "Enter number of  working workshops: ";
 			cs_working_workshops = corretctInput(1, "Working workshops quantity must be integer");
 			while (cs_working_workshops > cs.workshops)
@@ -192,6 +193,9 @@ void edit_cs(vector <CompStation>& all_cs)
 				cout << "Enter number of  working workshops: ";
 				cs_working_workshops = corretctInput(1, "Working workshops quantity must be integer");
 			};
+			cs.working_workshops = cs_working_workshops;
+			cout << "Compressor station has been edited" << endl << endl;
+			break;
 		};
 	}
 	if (!searched)
