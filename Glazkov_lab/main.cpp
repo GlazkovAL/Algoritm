@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <vector>
 #include <filesystem>
 
@@ -12,7 +13,7 @@ T corretctInput( T max ,string er_out)
 	T x;
 	cin >> x;
 
-	while (cin.fail())
+	while (cin.fail() || x <= 0)
 	{
 		cin.clear();
 		cin.ignore(10000, '\n');
@@ -70,7 +71,8 @@ Pipe createPipe(int p_id)
 	string er_output;
 
 	cout << "Enter pipe name: ";
-	cin >> p_name;
+	getline(cin, p_name);
+	getline(cin, p_name);
 	cout << "Enter pipe lenght in meters: ";
 	p_lenght = corretctInput(1.,"Lenght must be double");
 	cout << "Enter pipe diametr in milimeters: ";
@@ -91,7 +93,8 @@ CompStation createCS(int cs_id)
 	double cs_efficiency;
 
 	cout << "Enter comressor station name: ";
-	cin >> cs_name;
+	getline(cin, cs_name);
+	getline(cin, cs_name);
 	cout << "Enter number of workshops: ";
 	cs_workshops = corretctInput(1, "Workshops quantity must be integer");
 	cout << "Enter number of  working workshops: ";
@@ -152,15 +155,13 @@ void edit_pipe(vector <Pipe>& all_pipes)
 
 	show_pipes(all_pipes);
 	cout << "Enter pipe name from the list above:" ;
-	cin >> name_edit;
+	getline(cin, name_edit);
+	getline(cin, name_edit);
 	for (Pipe& pipe : all_pipes) {
 		if (pipe.name == name_edit)
 		{
 			searched = true;
-			cout << "Enter 1 if pipe is on repairing or 0 if pipe is working: " ;
-			working_status = corretctInput(1, "Repairing status must be integer");;
-			pipe.repair = working_status;
-			cout << "Pipe has been edited" << endl << endl;
+			pipe.repair = !pipe.repair;
 			break;
 		};
 	}
@@ -180,21 +181,31 @@ void edit_cs(vector <CompStation>& all_cs)
 
 	show_cs(all_cs);
 	cout << "Enter pipe name from the list above:";
-	cin >> name_edit;
+	getline(cin, name_edit);
+	getline(cin, name_edit);
 	for (CompStation& cs : all_cs) {
 		if (cs.name == name_edit)
 		{
 			searched = true;
-			cout << "Enter number of  working workshops: ";
-			cs_working_workshops = corretctInput(1, "Working workshops quantity must be integer");
-			while (cs_working_workshops > cs.workshops)
+			cout << "Enter 0 if you want to repair workshop or another positive integer to add working workshop: ";
+			cs_working_workshops = corretctInput(1, "Command must be integer");
+			if(cs.working_workshops+1 > cs.workshops && cs_working_workshops)
 			{
 				cout << "nubmer of working worshops must be less then number of workshops" << endl;
-				cout << "Enter number of  working workshops: ";
-				cs_working_workshops = corretctInput(1, "Working workshops quantity must be integer");
-			};
-			cs.working_workshops = cs_working_workshops;
-			cout << "Compressor station has been edited" << endl << endl;
+				
+			}
+			else if (cs.working_workshops - 1 < 0 && !cs_working_workshops) {
+				cs.working_workshops++;
+				cout << "Number of working workshops must be >0" << endl << endl;
+			}
+			else if (cs.working_workshops + 1 <= cs.workshops && cs_working_workshops) {
+				cs.working_workshops++;
+				cout << "Compressor station has been edited" << endl << endl;
+			}
+			else {
+				cs.working_workshops--;
+				cout << "Compressor station has been edited" << endl << endl;
+			}
 			break;
 		};
 	}
@@ -210,30 +221,35 @@ void save_file( const vector <Pipe>& all_pipes, const vector <CompStation>& all_
 {
 	ofstream out;
 	string f_name;
-	cout << "Enter file name: ";
-	cin >> f_name;
-	out.open("saves/"+ f_name + ".txt");
-	if (out.is_open()) {
-		//out << "PIPE" << endl;
+	if (all_pipes.size() > 0 && all_cs.size() > 0) {
+		cout << "Enter file name: ";
+		cin >> f_name;
+		out.open("saves/" + f_name + ".txt");
+		if (out.is_open() && all_pipes.size() > 0 && all_cs.size() > 0) {
+			//out << "PIPE" << endl;
 
-		for (const Pipe& pipe : all_pipes) {
-			out << pipe.id << endl << pipe.name << endl << pipe.lenght << endl << pipe.diam << endl << pipe.repair << endl;
+			for (const Pipe& pipe : all_pipes) {
+				out << pipe.id << endl << pipe.name << endl << pipe.lenght << endl << pipe.diam << endl << pipe.repair << endl;
+			}
+
+			out << "999" << endl;
+
+			for (const CompStation& cs : all_cs) {
+				out << cs.id << endl << cs.name << endl << cs.workshops << endl << cs.working_workshops << endl << cs.efficiency << endl;
+			}
+
+			out << "888";
+
 		}
-		
-		out << "999" << endl;
-		
-		for (const CompStation& cs : all_cs) {
-			out << cs.id << endl << cs.name << endl << cs.workshops << endl << cs.working_workshops << endl << cs.efficiency << endl;
-		}
-
-		out << "888";
-
+		out.close();
+		cout << "File has been saved " << endl;
 	}
-	out.close();
+	else {
+		cout << "There are now objects, create some objects before saving" << endl;
+	};
 
 	
 
-	cout << "File has been saved " << endl;
 };
 
 //Функция для импортирования данных из файла
@@ -268,7 +284,8 @@ void LoadFile(vector <Pipe>& all_pipes, vector <CompStation>& all_cs)
 
 					Pipe p;
 					p.id = load_switch;
-					fin >> p.name;
+					getline(fin,p.name);
+					getline(fin, p.name);
 					fin >> p.lenght;
 					fin >> p.diam;
 					fin >> p.repair;
@@ -282,7 +299,8 @@ void LoadFile(vector <Pipe>& all_pipes, vector <CompStation>& all_cs)
 
 					CompStation cs;
 					cs.id = load_switch;
-					fin >> cs.name;
+					getline(fin, cs.name);
+					getline(fin, cs.name);
 					fin >> cs.workshops;
 					fin >> cs.working_workshops;
 					fin >> cs.efficiency;
