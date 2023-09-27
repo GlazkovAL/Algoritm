@@ -6,21 +6,100 @@
 
 
 using namespace std;
-template <typename T>
 
-T corretctInput( T max ,string er_out)
+
+double corretctInput(double max ,string er_out)
 {
-	T x;
+	string x;
+	bool fl_double1=0;
+	bool fl_double2 = 0;
+	string s1;
+	string s2;
+
 	cin >> x;
 
-	while (cin.fail() || x <= 0)
+	auto pos = x.find(".");
+	if (pos != string::npos) 
+	{
+		 s1 = x.substr(0, pos);
+		 s2 = x.substr(pos+1);
+	}
+
+	for (const char& el : s1) {
+		if (!isdigit(el)) {
+			fl_double1 = 1;
+			break;
+		}
+	}
+	for (const char& el : s2) {
+		if (!isdigit(el)) {
+			fl_double2 = 1;
+			break;
+		}
+	}
+	while (cin.fail() || fl_double2 || fl_double1)
 	{
 		cin.clear();
 		cin.ignore(10000, '\n');
 		cout << er_out << endl;
 		cin >> x;
+
+		auto pos = x.find(".");
+		if (pos != string::npos)
+		{
+			 s1 = x.substr(0, pos);
+			 s2 = x.substr(pos + 1);
+		}
+
+		fl_double1 = 0;
+		fl_double2 = 0;
+		for (const char& el : s1) {
+			if (!isdigit(el)) {
+				fl_double1 = 1;
+				break;
+			}
+		}
+		for (const char& el : s2) {
+			if (!isdigit(el)) {
+				fl_double2 = 1;
+				break;
+			}
+		}
+
 	}
-	return x;
+
+	return stod(x);
+
+}
+
+int corretctInput_int(int max, string er_out)
+{
+	string x;
+	bool fl_int;
+	fl_int = 0;
+	
+	cin >> x;
+	for (const char& el : x) {
+		if (!isdigit(el)) {
+			fl_int = 1;
+		}
+	}
+	while (cin.fail() || fl_int)
+	{
+		cin.clear();
+		cin.ignore(10000, '\n');
+		cout << er_out << endl;
+		cin >> x;
+		fl_int = 0;
+		for (const char& el : x) {
+			if (!isdigit(el)) {
+				fl_int = 1;
+			}
+		}
+
+	}
+
+	return stoi(x);
 
 }
 
@@ -74,11 +153,11 @@ Pipe createPipe(int p_id)
 	getline(cin, p_name);
 	getline(cin, p_name);
 	cout << "Enter pipe lenght in meters: ";
-	p_lenght = corretctInput(1.,"Lenght must be double");
+	p_lenght = corretctInput(1. ,"Lenght must be double");
 	cout << "Enter pipe diametr in milimeters: ";
-	p_diam = corretctInput(1, "Diametr must be integer");
-	cout << "Enter 1 if pipe is on repairing or 0 if pipe is working: ";
-	p_repair = corretctInput(1, "Repairing status must be integer");
+	p_diam = corretctInput_int(1, "Diametr must be integer");
+	cout << "Enter 0 if pipe is working or another integer if repairing: ";
+	p_repair = corretctInput_int(1, "Repairing status must be integer");
 
 
 	return { p_id, p_name, p_lenght, p_diam, p_repair };
@@ -96,9 +175,9 @@ CompStation createCS(int cs_id)
 	getline(cin, cs_name);
 	getline(cin, cs_name);
 	cout << "Enter number of workshops: ";
-	cs_workshops = corretctInput(1, "Workshops quantity must be integer");
+	cs_workshops = corretctInput_int(1, "Workshops quantity must be integer");
 	cout << "Enter number of  working workshops: ";
-	cs_working_workshops = corretctInput(1, "Working workshops quantity must be integer");
+	cs_working_workshops = corretctInput_int(1, "Working workshops quantity must be integer");
 	while (cs_working_workshops > cs_workshops) 
 	{
 		if (cs_working_workshops > cs_workshops)
