@@ -12,8 +12,8 @@ void Pipe::Print() {
 
 }
 
-void Pipe::Push(std::map<int, Pipe>& myMap)
+void Pipe::Push(std::map<int, Pipe>& myMap, Pipe pipe)
 {
-	myMap.emplace(id, this);
+	myMap.emplace(id, pipe);
 }
 

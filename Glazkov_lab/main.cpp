@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <string.h>
 #include <vector>
 #include <filesystem>
 #include <map>
@@ -18,6 +19,16 @@ ostream& operator << (ostream& out, Pipe p) {
 ostream& operator << (ostream& out, CompStation cs) {
 	return out << cs.name << endl << cs.workshops << endl << cs.working_workshops << endl << cs.efficiency << endl;
 
+}
+
+bool Is_int(string s) {
+
+	for (const char& el : s) {
+		if (!isdigit(el)) {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 double correctInput(double max ,string er_out)
@@ -84,37 +95,21 @@ double correctInput(double max ,string er_out)
 int corretctInput_int(int max, string er_out)
 {
 	string x;
-	bool fl_int;
-	fl_int = 0;
+
 	
 	cin >> x;
-	for (const char& el : x) {
-		if (!isdigit(el)) {
-			fl_int = 1;
-			break;
-		}
-	}
-	while (cin.fail() || fl_int || stoi(x)<0)
+	
+	while (cin.fail() || !Is_int(x) || stoi(x)<0)
 	{
 		cin.clear();
 		cin.ignore(10000, '\n');
 		cout << er_out << endl;
 		cin >> x;
-		fl_int = 0;
-		for (const char& el : x) {
-			if (!isdigit(el)) {
-				fl_int = 1;
-			}
-		}
-
 	}
 
 	return stoi(x);
 
 }
-
-
-
 
 
 
@@ -129,6 +124,11 @@ void show_menu()
 	<< "5 Edit compress station" << endl
 	<< "6 Save" << endl
 	<< "7 Import" << endl
+	<< "8 Remove pipe" << endl
+	<< "9 Remove cs" << endl
+	<< "10 Filter" << endl
+	<< "11 Batch editing pipes" << endl
+	<< "12 Batch editing cs" << endl
 	<< "0 Exit" << endl << endl;
 };
 
@@ -153,12 +153,12 @@ void createPipe(map <int, Pipe> &all_pipes)
 
 	Pipe pipe(p_name,p_lenght,p_diam,p_repair);
 
-	pipe.Push(all_pipes);
+	pipe.Push(all_pipes, pipe);
 	
 };
 
 // Функция для создания компрессорной станции
-CompStation createCS(map <int, CompStation>& all_stations)
+void createCS(map <int, CompStation>& all_stations)
 {
 	string cs_name;
 	int cs_workshops;
@@ -186,7 +186,7 @@ CompStation createCS(map <int, CompStation>& all_stations)
 
 
 	CompStation cs(cs_name, cs_workshops, cs_working_workshops, cs_efficiency );
-	cs.Push(all_stations);
+	cs.Push(all_stations, cs);
 };
 
 // Функция для показа всех труб
@@ -241,7 +241,6 @@ void edit_cs(map <int, CompStation>& all_cs)
 {
 	int id_edit;;
 	int cs_working_workshops;
-	bool searched = false;
 
 	show_cs(all_cs);
 	cout << "Enter cs id from the list above:";
@@ -257,11 +256,11 @@ void edit_cs(map <int, CompStation>& all_cs)
 				
 		}
 		else if (cs.working_workshops - 1 < 0 && !cs_working_workshops) {
-			cs.working_workshops++;
+			all_cs[id_edit].working_workshops++;
 			cout << "Number of working workshops must be >0" << endl << endl;
 		}
 		else if (cs.working_workshops + 1 <= cs.workshops && cs_working_workshops) {
-			cs.working_workshops++;
+			all_cs[id_edit].working_workshops++;
 			cout << "Compressor station has been edited" << endl << endl;
 		}
 		else {
@@ -287,11 +286,11 @@ void save_file( const map <int, Pipe>& all_p, const map <int, CompStation>& all_
 		cin >> f_name;
 		out.open("saves/" + f_name + ".txt");
 		if (out.is_open() && all_p.size() > 0 && all_cs.size() > 0) {
-			out << all_p.size();
+			out << all_p.size()<< endl;
 			for (auto& pipe : all_p) {
 				out << pipe.second;
 			}
-			out << all_cs.size();
+			out << all_cs.size() << endl ;
 			for (auto& cs : all_cs) {
 				out << cs.second;
 			}
@@ -344,7 +343,7 @@ void LoadFile(map <int, Pipe>& all_p, map <int, CompStation>& all_cs)
 
 					fin >> p_name >> p_lenght >> p_diam >> p_repair;
 					Pipe p(p_name, p_lenght, p_diam, p_repair);
-					p.Push(all_p);
+					p.Push(all_p, p);
 				}
 				fin >> number;
 				for (int i = 0; i < number; i++) {
@@ -355,9 +354,9 @@ void LoadFile(map <int, Pipe>& all_p, map <int, CompStation>& all_cs)
 
 					fin >> cs_name >> cs_workshops >> cs_working_workshops >> cs_efficiency;
 					CompStation cs(cs_name, cs_workshops, cs_working_workshops, cs_efficiency);
-					cs.Push(all_cs);
+					cs.Push(all_cs, cs);
 				}
-				cout << "File has been imported" << endl;
+				cout << "File has been imported" << endl << endl;
 			}
 			else {
 				cout << "ERROR" << endl;
@@ -371,6 +370,391 @@ void LoadFile(map <int, Pipe>& all_p, map <int, CompStation>& all_cs)
 	}
 
 }
+
+void Remove_p(map <int, Pipe>& all_p) {
+	int id_edit;
+
+	show_pipes(all_p);
+	cout << "Enter pipe id from the list above:";
+	id_edit = corretctInput_int(1, "Id must be integer");
+
+	if (all_p.find(id_edit) != all_p.end()) {
+		all_p.erase(id_edit);
+	}
+	else
+	{
+		cout << "Wrong pipe id" << endl;
+	}
+
+}
+void Remove_cs(map <int, CompStation>& all_cs) {
+	int id_edit;
+
+	show_cs(all_cs);
+	cout << "Enter cs id from the list above:";
+	id_edit = corretctInput_int(1, "Id must be integer");
+
+	if (all_cs.find(id_edit) != all_cs.end()) {
+		all_cs.erase(id_edit);
+	}
+	else
+	{
+		cout << "Wrong cs id" << endl;
+	}
+}
+
+void Edit_or_remove_p(map <int, Pipe>& all_p, vector <int> editing_id) {
+	string fun;
+	cout << "Enter remove(r) or change repairing status(c) ";
+	cin >> fun;
+	if (fun == "r") {
+		for (int id : editing_id) {
+			all_p.erase(id);
+		}
+		cout << "Pipes has been removed" << endl << endl;
+	}
+	else if (fun == "c") {
+		for (int id : editing_id) {
+			all_p[id].repair = !all_p[id].repair;
+		}
+		cout << "Pipes has been changed" << endl << endl;
+	}
+	else {
+		cout << "Wrong command";
+	}
+}
+
+void Edit_or_remove_cs(map <int, CompStation>& all_cs, vector <int> editing_id) {
+	string fun;
+	cout << "Enter remove(r) , add (+) or reduce(-) working workshop ";
+	cin >> fun;
+	if (fun == "r") {
+		for (int id : editing_id) {
+			all_cs.erase(id);
+		}
+		cout << "Pipes has been removed" << endl << endl;
+	}
+	else if (fun == "+") {
+		for (int id : editing_id) {
+			if (all_cs[id].working_workshops + 1 <= all_cs[id].workshops) {
+				all_cs[id].working_workshops++;
+			}
+		}
+		cout << "Cs has been changed" << endl << endl;
+	}
+	else if (fun == "-") {
+		for (int id : editing_id) {
+			if (all_cs[id].working_workshops - 1 >0) {
+				all_cs[id].working_workshops--;
+			}
+		}
+		cout << "Cs has been changed" << endl << endl;
+	}
+	else {
+		cout << "Wrong command";
+	}
+}
+
+void Filter_pipes_name(map <int, Pipe>& all_p) {
+	map <int, Pipe> filter_p;
+	string name_part;
+	vector <int> editing_id;
+
+	cout << "Enter name for filter: ";
+	cin >> name_part;
+
+	for (auto& pipe : all_p) {
+		if (pipe.second.name.find(name_part) != string::npos) {
+			pipe.second.Push(filter_p, pipe.second);
+			editing_id.push_back(pipe.first);
+		}
+	}
+	if (filter_p.size() == 0) {
+		cout << "There are no pipes with such pipe name" << endl;
+	}
+	else {
+		show_pipes(filter_p);
+		cout << endl;
+	}
+
+	cout << "Enter yes if you want to edit these pipes ";
+	cin >> name_part;
+	if (name_part == "yes") {
+		Edit_or_remove_p(all_p, editing_id);
+	}
+}
+
+void Filter_pipes_repair(map <int, Pipe>& all_p) {
+	map <int, Pipe> filter_p;
+	string repairing_status;
+	vector <int> editing_id;
+
+	cout << "Enter you want filter repairing(enter r) or working(enter w) pipes: ";
+	cin >> repairing_status;
+
+	while (1) {
+		if (repairing_status == "r") {
+			for (auto& pipe : all_p) {
+				if (pipe.second.repair) {
+					pipe.second.Push(filter_p, pipe.second);
+					editing_id.push_back(pipe.first);
+				}
+			}
+			if (filter_p.size() == 0) {
+				cout << "There are no repairing pipes " << endl;
+				break;
+			}
+			else {
+				show_pipes(filter_p);
+				cout << endl;
+				break;
+			}
+		}
+		else if(repairing_status == "w"){
+			for (auto& pipe : all_p) {
+				if (!pipe.second.repair) {
+					pipe.second.Push(filter_p, pipe.second);
+					editing_id.push_back(pipe.first);
+				}
+			}
+			if (filter_p.size() == 0) {
+				cout << "There are no working pipes " << endl;
+				break;
+			}
+			else {
+				show_pipes(filter_p);
+				cout << endl;
+				break;
+			}
+		}
+		else {
+			cout << "Wrong command" << endl;
+			cout << "Enter you want filter repairing(enter r) or working(enter w) pipes: ";
+			cin >> repairing_status;
+		}
+	}
+	cout << "Enter yes if you want to edit these pipes ";
+	cin >> repairing_status;
+	if (repairing_status == "yes") {
+		Edit_or_remove_p(all_p, editing_id);
+	}
+}
+
+void Filter_cs_name(map <int, CompStation>& all_cs) {
+	map <int, CompStation> filter_cs;
+	string name_part;
+	vector <int> editing_id;
+
+	cout << "Enter name for filter: ";
+	cin >> name_part;
+
+	for (auto& cs : all_cs) {
+		if (cs.second.name.find(name_part) != string::npos) {
+			cs.second.Push(filter_cs, cs.second);
+			editing_id.push_back(cs.first);
+		}
+	}
+	if (filter_cs.size() == 0) {
+		cout << "There are no cs with such cs name" << endl;
+	}
+	else {
+		show_cs(filter_cs);
+		cout << endl;
+	}
+
+	cout << "Enter yes if you want to edit these cs ";
+	cin >> name_part;
+	if (name_part == "yes") {
+		Edit_or_remove_cs(all_cs, editing_id);
+	}
+
+}
+
+void Filter_cs_percent(map <int, CompStation>& all_cs) {
+	map <int, CompStation> filter_cs;
+	string func;
+	int per;
+	vector <int> editing_id;
+
+	cout << "Enter the condition: equal(e) less(l) or more(r) ";
+	cin >> func;
+	cout << "Enter percent:  ";
+	per = corretctInput_int(1,"Percent must be integer");
+
+	if (func == "e") {
+		for (auto& cs : all_cs) {
+			if ((cs.second.working_workshops*100)/cs.second.workshops == per) {
+				cs.second.Push(filter_cs, cs.second);
+				editing_id.push_back(cs.first);
+			}
+		}
+		if (filter_cs.size() == 0) {
+			cout << "There are no such cs" << endl;
+		}
+		else {
+			show_cs(filter_cs);
+			cout << endl;
+		}
+	}
+	else if (func == "l") {
+		for (auto& cs : all_cs) {
+			if ((cs.second.working_workshops * 100) / cs.second.workshops < per) {
+				cs.second.Push(filter_cs, cs.second);
+				editing_id.push_back(cs.first);
+			}
+		}
+		if (filter_cs.size() == 0) {
+			cout << "There are no such cs" << endl;
+		}
+		else {
+			show_cs(filter_cs);
+			cout << endl;
+		}
+
+	}
+	else if (func == "m") {
+		for (auto& cs : all_cs) {
+			if ((cs.second.working_workshops * 100) / cs.second.workshops > per) {
+				cs.second.Push(filter_cs, cs.second);
+				editing_id.push_back(cs.first);
+			}
+		}
+		if (filter_cs.size() == 0) {
+			cout << "There are no such cs" << endl;
+		}
+		else {
+			show_cs(filter_cs);
+			cout << endl;
+		}
+	}
+	else {
+		cout << "Wrong condition" << endl;
+	}
+	cout << "Enter yes if you want to edit these cs ";
+	cin >> func;
+	if (func == "yes") {
+		Edit_or_remove_cs(all_cs, editing_id);
+	}
+
+}
+
+void Filter(map <int, Pipe>& all_p, map <int, CompStation>& all_cs) {
+	int filter_num;
+
+	cout << "1 Filter pipes by name" << endl
+		<< "2 Filter pipes by repairing status" << endl
+		<< "3 Filter cs by name" << endl
+		<< "4 Filter cs by % of working workshops" << endl << endl;
+
+	cout << "Enter command number: ";
+	filter_num = corretctInput_int(1, "Unexpected command, command number must be integer");
+
+	switch (filter_num) {
+	case 1:
+		Filter_pipes_name(all_p);
+		break;
+	case 2:
+		Filter_pipes_repair(all_p);
+		break;
+	case 3:
+		Filter_cs_name(all_cs);
+		break;
+	case 4:
+		Filter_cs_percent(all_cs);
+		break;
+	
+	default:
+		cout << "Unexpected command";
+		break;
+
+	}
+}
+
+
+void Batch_editing_p(map <int, Pipe>& all_p) {
+	string line_id;
+	char *str_id;
+	int id_p;
+	vector <int> editing_id;
+	stringstream ss;
+
+	show_pipes(all_p);
+	cout << "Enter id of pipes: ";
+	cin.ignore();
+	getline(cin, line_id);
+	char *l_id= _strdup(line_id.c_str());
+	 #pragma warning(suppress : 4996)
+	str_id = strtok(l_id, " , ");
+
+	while (str_id) {
+		if (Is_int(str_id)) {
+			id_p = stoi(str_id);
+			if (all_p.find(id_p) != all_p.end()) {
+				editing_id.push_back(id_p);
+
+
+			}
+			else {
+				cout << "No such id" << endl;
+				editing_id = {};
+				break;
+			}
+		}
+		else {
+			cout << "Id must be integer" << endl;
+			editing_id = {};
+			break;
+		}
+		#pragma warning(suppress : 4996)
+		str_id = strtok(0, " , ");
+	}
+	if (editing_id.size() != 0) {
+		Edit_or_remove_p(all_p, editing_id);
+	}
+}
+
+void Batch_editing_cs(map <int, CompStation>& all_cs) {
+	string line_id;
+	char* str_id;
+	int id_cs;
+	vector <int> editing_id;
+	stringstream ss;
+
+	show_cs(all_cs);
+	cout << "Enter id of cs: ";
+	cin.ignore();
+	getline(cin, line_id);
+	char* l_id = _strdup(line_id.c_str());
+#pragma warning(suppress : 4996)
+	str_id = strtok(l_id, " , ");
+
+	while (str_id) {
+		if (Is_int(str_id)) {
+			id_cs = stoi(str_id);
+			if (all_cs.find(id_cs) != all_cs.end()) {
+				editing_id.push_back(id_cs);
+
+
+			}
+			else {
+				cout << "No such id" << endl;
+				editing_id = {};
+				break;
+			}
+		}
+		else {
+			cout << "Id must be integer" << endl;
+			editing_id = {};
+			break;
+		}
+#pragma warning(suppress : 4996)
+		str_id = strtok(0, " , ");
+	}
+	if (editing_id.size() != 0) {
+		Edit_or_remove_cs(all_cs, editing_id);
+	}
+}
+
 
 int main()
 {
@@ -417,11 +801,29 @@ int main()
 
 				LoadFile(all_pipes, all_stations);
 				break;
+			case 8:
+				Remove_p(all_pipes);
+				break;
 
+			case 9:
+				Remove_cs(all_stations);
+				break;
+
+			case 10:
+				Filter(all_pipes, all_stations);
+				break;
+
+			case 11:
+				Batch_editing_p(all_pipes);
+				break;
+
+			case 12:
+				Batch_editing_cs(all_stations);
+				break;
 			case 0:
-				return 0;
+				return 0; 
 			default:
-				cout << "Unexpected command, please choose command numbers from this list";
+				cout << "Unexpected command, please choose command numbers from this list" << endl;
 				break;
 		}
 		
