@@ -12,3 +12,8 @@ void CompStation::Push(std::map<int, CompStation>& myMap, CompStation cs)
 {
 	myMap.emplace(id, cs);
 }
+
+void CompStation::SetId(int id_m)
+{
+	id_count = id_m;
+}

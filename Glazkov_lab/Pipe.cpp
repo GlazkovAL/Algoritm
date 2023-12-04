@@ -17,3 +17,8 @@ void Pipe::Push(std::map<int, Pipe>& myMap, Pipe pipe)
 	myMap.emplace(id, pipe);
 }
 
+void Pipe::SetId(int id_m)
+{
+	id_count = id_m;
+}
+

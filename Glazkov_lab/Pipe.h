@@ -31,8 +31,19 @@ public:
 		repair = p_repair;
 
 	}
+	Pipe(int id_c,std::string p_name, double p_lenght, int p_diam, bool p_repair) {
+
+		id = id_c;
+		name = p_name;
+		lenght = p_lenght;
+		diam = p_diam;
+		repair = p_repair;
+
+	}
+
 
 	void Print();
 	void Push(std::map <int, Pipe>& myMap, Pipe pipe);
+	void SetId(int id_m);
 };
 
