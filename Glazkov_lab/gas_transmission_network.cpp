@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <vector>
 #include <algorithm>
+#include <queue>
 #include "Utilities.h"
 
 
@@ -201,6 +202,7 @@ void gas_transmission_network::save_file()
 	if (all_p.size() > 0 && all_cs.size() > 0) {
 		cout << "Enter file name: ";
 		cin >> f_name;
+		cerr << f_name << '\n';
 		out.open("saves/" + f_name + ".txt");
 		if (out.is_open() && all_p.size() > 0 && all_cs.size() > 0) {
 			out << all_p.size() << endl;
@@ -246,6 +248,7 @@ void gas_transmission_network::load_file()
 
 	cout << "Enter file name: ";
 	cin >> searshing_file;
+	cerr << searshing_file << '\n';
 
 	for (filesystem::path& fname : file_names) {
 		if (fname == searshing_file)
@@ -320,6 +323,21 @@ void gas_transmission_network::Edit_or_remove_p(vector<int> editing_id)
 	cin >> fun;
 	if (fun == "r") {
 		for (int id : editing_id) {
+			if (link_p.find(id)!= link_p.end()) {
+				for (auto& ln : links) {
+						int index = 0;
+						for (auto& ed : ln.second.edges) {
+							if (ed.pipe_id==id) {
+								ln.second.edges.erase(ln.second.edges.begin() + index);
+							}
+							index++;
+						}
+					if (ln.second.edges.size() == 0) {
+						links.erase(ln.first);
+					}
+				}
+
+			}
 			all_p.erase(id);
 
 		}
@@ -346,8 +364,8 @@ void gas_transmission_network::Edit_or_remove_cs(vector<int> editing_id)
 			all_cs.erase(id);
 			for (auto& ln : links) {
 				if (ln.second.CsIds.find(id) != ln.second.CsIds.end()) {
+					int index = 0;
 					for (auto& ed : ln.second.edges) {
-						int index = 0;
 						if (ed.end_p == id || ed.start_p == id) {
 							ln.second.edges.erase(ln.second.edges.begin() + index);
 						}
@@ -769,16 +787,26 @@ void gas_transmission_network::show_links()
 	cout << endl;
 }
 
-void Graph::dfs(int vertex, std::vector<int>& ans, std::vector<bool>& used)
+void Graph::dfs(int vertex, std::vector<int>& ans, std::vector<bool>& used, bool& cycle, std::set <int>& us_to,int start)
 {
 	used[vertex] = true;
-
+	us_to.insert(vertex);
 	for (size_t i = 0; i < incedent[vertex].size(); ++i) {
+		if (vertex == start) {
+			us_to.clear();
+		}
+		if (!cycle) {
+			int to = incedent[vertex][i];
+			if (us_to.find(to) != us_to.end()) {
+				cycle = true;
+				break;
+			}
+			else {
+				us_to.insert(to);
 
-		int to = incedent[vertex][i];
-
-		if (!used[to])
-			dfs(to, ans, used);
+				if (!used[to]) dfs(to, ans, used,cycle, us_to, start);
+			}
+		}
 	}
 	ans.push_back(vertex);
 
@@ -788,24 +816,220 @@ void Graph::dfs(int vertex, std::vector<int>& ans, std::vector<bool>& used)
 void gas_transmission_network::TopologicalSort()
 {
 	vector <int> ans;
+	
 	for (auto& link : links) {
 		cout << "Graph " << link.first << endl;
 		std::vector <bool> used(101, false);
+		bool Cycle = false;
 
 			ans.clear();
 			for (int i = 0; i < link.second.incedent.size(); ++i) {
-
+				set <int> us_to;
 				if (!used[i] && link.second.incedent[i].size()!=0) {
+					
 
-					link.second.dfs(i, ans, used);
+					link.second.dfs(i, ans, used, Cycle, us_to,i);
 				}
 			}
 			reverse(ans.begin(), ans.end());
-			cout << "Sorted: ";
-			for (int i = 0; i < ans.size(); ++i) cout << ans[i] << " ";
+			if (Cycle) {
+				cout << "Error This graph has cycle  ";
+			}
+			else {
+				cout << "Sorted: ";
+				for (int i = 0; i < ans.size(); ++i) cout << ans[i] << " ";
+			}
 			cout << endl;
 	}
 	cout << endl;
+}
+
+void gas_transmission_network::del_cs_graph()
+{
+	int id;
+	show_links();
+	cout << "Enter cs id ";
+	id = corretctInput_int(1, "Id must be integer");
+	for (auto& ln : links) {
+		if (ln.second.CsIds.find(id) != ln.second.CsIds.end()) {
+			int index = 0;
+			for (auto& ed : ln.second.edges) {
+				if (ed.end_p == id || ed.start_p == id) {
+					ln.second.edges.erase(ln.second.edges.begin() + index);
+				}
+				index++;
+			}
+		}
+		if (ln.second.edges.size() == 0) {
+			links.erase(ln.first);
+		}
+	}
+	
+}
+
+void gas_transmission_network::Dijkstra()
+{
+	int st_vertex, end_vertex;
+	cout << "Enter first vertex: ";
+	cin >> st_vertex;
+	cerr << st_vertex;
+	cout << "Enter second vertex: ";
+	cin >> end_vertex;
+	cerr << end_vertex;
+	for (auto& link : links) {
+		if (link.second.CsIds.find(st_vertex) != link.second.CsIds.end()) {
+			vector <pair <int, int> >path_lenghts(link.second.CsIds.size()+1,make_pair( - 1, INT16_MAX));
+			vector <bool> used_v(link.second.CsIds.size()+1, false);
+			vector <int> ans;
+			bool f = false;
+			std::vector <bool> used(101, false);
+			bool Cycle = false;
+
+			ans.clear();
+			set <int> us_to;
+			link.second.dfs(st_vertex, ans, used, Cycle, us_to, st_vertex);
+
+			for (auto i : ans) {
+				if (i == end_vertex) f = true;
+			}
+			if (f) {
+				used_v[st_vertex] = true;
+				path_lenghts[st_vertex] = make_pair(-1,0);
+				int active_v = st_vertex;
+				while (!used_v[end_vertex]) {
+					for (auto ed : link.second.edges) {
+						if (ed.start_p == active_v && ed.weight+path_lenghts[active_v].second < path_lenghts[ed.end_p].second) {
+							path_lenghts[ed.end_p] = make_pair(active_v, ed.weight + path_lenghts[active_v].second);
+
+						}
+					}
+					int min_weight = INT16_MAX;
+					for (int i = 0; i< link.second.CsIds.size()+1; i++) {
+						if (path_lenghts[i].second < min_weight && !used_v[i]) {
+							min_weight = path_lenghts[i].second;
+							active_v = i;
+						}
+					}
+					used_v[active_v] = true;
+				}
+				ans.clear();
+				active_v = end_vertex;
+				while (active_v != st_vertex) {
+					active_v = path_lenghts[active_v].first;
+					ans.push_back(active_v);
+
+				}
+				cout << "aaaaaaaaa" << endl;
+				reverse(ans.begin(), ans.end());
+				cout << "Minimal path lenght: " << path_lenghts[end_vertex].second << endl;
+				cout << "Path: ";
+				for (int v : ans) {
+					cout << v << " --> ";
+				}
+				cout << end_vertex << endl;
+
+			}
+			else cout << "There is no way from " << st_vertex << " to " << end_vertex << endl << endl;
+
+
+		}
+	}
+
+	cout << endl;
+}
+
+void gas_transmission_network::maxFlow()
+{
+	vector <double> weight_row(links[1].CsIds.size() + 1,0.0);
+	vector<vector<double>> weight_matrix(links[1].CsIds.size()+1, weight_row);
+
+	for (auto ed : links[1].edges) {
+		if (all_p[ed.pipe_id].repair == true) {
+			weight_matrix[ed.start_p][ed.end_p] = 0.0;
+		}
+		else {
+			weight_matrix[ed.start_p][ed.end_p] = all_p[ed.pipe_id].lenght;
+		}
+	}
+
+
+	int source, sink;
+	cout << "Enter source id: ";
+	cin >> source;
+	cerr << source;
+
+	cout << "Enter sink id: ";
+	cin >> sink;
+	cerr << sink;
+
+	vector<int> parent(links[1].CsIds.size()+1, -1);
+	int max_flow = 0;
+
+	while (true) {
+		parent.assign(links[1].CsIds.size()+1, -1);
+		queue <pair <int, double> > q;
+		q.push({ source, DBL_MAX });
+		parent[source] = source;
+
+
+		while (!q.empty()) {
+			int u = q.front().first;
+			double path_flow = q.front().second;
+			q.pop();
+
+			for (int v = 0; v < links[1].CsIds.size()+1; v++) {
+				if (parent[v] == -1 && weight_matrix[u][v] > 0) {
+	
+					parent[v] = u;
+					int min_capacity;
+					if (path_flow < weight_matrix[u][v]) {
+						min_capacity = path_flow;
+					}
+					else {
+						min_capacity = weight_matrix[u][v];
+					}
+
+					if (v == sink) {
+	
+						while (v != source) {
+							u = parent[v];
+							weight_matrix[u][v] -= min_capacity;
+							weight_matrix[v][u] += min_capacity;
+							v = u;
+						}
+						max_flow += min_capacity;
+						break;
+					}
+					q.push({ v, min_capacity });
+				}
+			}
+		}
+
+		if (parent[sink] == -1)
+			break;
+	}
+
+	cout << "Max flow from " << source << " to " << sink << " equal " << max_flow << endl << endl;
+}
+
+void gas_transmission_network::del_p_graph() {
+	int id;
+	show_links();
+	cout << "Enter pipe id ";
+	id = corretctInput_int(1, "Id must be integer");
+	for (auto& ln : links) {
+		int index = 0;
+		for (auto& ed : ln.second.edges) {
+			if (ed.pipe_id == id) {
+				ln.second.edges.erase(ln.second.edges.begin() + index);
+			}
+			index++;
+		}
+		if (ln.second.edges.size() == 0) {
+			links.erase(ln.first);
+		}
+	}
+
 }
 
 

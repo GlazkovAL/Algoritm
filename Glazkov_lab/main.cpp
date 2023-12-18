@@ -7,11 +7,13 @@
 #include <map>
 #include <ctype.h>
 #include "gas_transmission_network.h"
+#include <chrono>
 #include "log.h"
 
 
 
 using namespace std;
+using namespace chrono;
 
 redirect_stream_wrapper<istream> cin_in(cin);
 bool Is_integer(string s) {
@@ -57,6 +59,10 @@ void show_menu()
 		<< "8 Batch editing cs" << endl
 		<< "9 Link CS" << endl 
 		<< "10 Topological sort" << endl
+		<< "11 Delete cs from graph" << endl
+		<< "12 Delete pipe from graph" << endl
+		<< "13 Dijkstra" << endl
+		<< "14 Max flow" << endl
 	<< "0 Exit" << endl << endl;
 };
 
@@ -67,7 +73,8 @@ int main()
 	int zapros=0;
 	ofstream fout;
 	gas_transmission_network gtn;
-	ofstream log("log.txt");
+	string time = format(":%D-%M-%Y %h_%m_%s", system_clock::now());
+	ofstream log("log"+ time+".txt");
 	redirect_stream_wrapper cerr_out(cerr);
 	if (log) {
 		cerr_out.redirect(log);
@@ -125,6 +132,22 @@ int main()
 
 			case 10:
 				gtn.TopologicalSort();
+				break;
+
+			case 11:
+				gtn.del_cs_graph();
+				break;
+
+			case 12:
+				gtn.del_p_graph();
+				break;
+
+			case 13:
+				gtn.Dijkstra();
+				break;
+
+			case 14:
+				gtn.maxFlow();
 				break;
 
 			case 0:

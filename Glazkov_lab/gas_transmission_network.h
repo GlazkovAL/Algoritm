@@ -39,7 +39,7 @@ struct Graph {
 		incedent.resize(50);
 		incedent[ed.start_p].push_back(ed.end_p);
 	};
-	void dfs(int vertex, std::vector <int>& ans, std::vector <bool>& used);
+	void dfs(int vertex, std::vector <int>& ans, std::vector <bool>& used, bool& cycle, std::set <int>& us_to, int start);
 };
 
 class gas_transmission_network
@@ -78,7 +78,10 @@ public:
 	void Batch_editing_p();
 	void Batch_editing_cs();
 	void Link_cs();
+	void del_cs_graph();
+	void del_p_graph();
 	void show_links();
-	void dfs(int v, std::vector <int>& ans,std::vector <std::string> inc);
 	void TopologicalSort();
+	void Dijkstra();
+	void maxFlow();
 };
